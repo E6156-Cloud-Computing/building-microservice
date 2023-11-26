@@ -1,0 +1,24 @@
+{% extends 'base.html' %} 
+
+
+{% block title %} Home {% endblock %}
+
+{% block body %}
+    <h1>MicroserviceBuilding</h1>
+    <p>
+        /api/building: Get | Post
+    </p>
+
+    <p>
+        /api/building{building_name} : Get | Put | Delete
+    </p>
+
+    <p>
+        /api/building/{building_name}/rooms/{room_type}: Get
+    </p>
+
+    <p>
+        /api/building/{building_name}/rooms/{room_type}/availability: Get
+    </p>
+
+{% endblock %}
