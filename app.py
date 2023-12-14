@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import Integer, String, Boolean, ForeignKey, select
 from sqlalchemy.orm import Mapped, mapped_column
+import googlemaps
 
 def serialize_doc(doc):
     if "_id" in doc:
@@ -12,6 +13,10 @@ def serialize_doc(doc):
 app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://root:oyyb980219@localhost:3306/db'
+
+app.config["GOOGLE_MAPS_API_KEY"] = "AIzaSyChRU-WeMzdOJPcJh34tnz-YWTr3vNJt08"
+gmaps = googlemaps.Client(key=app.config["GOOGLE_MAPS_API_KEY"])
+
 
 class Base(DeclarativeBase):
   pass
@@ -36,6 +41,20 @@ with app.app_context():
 
     building = db.session.execute(db.select(Building)).scalars()
     print(building)
+
+@app.route('/get_location', methods=['GET'])
+def get_location():
+    address = request.args.get("address")
+    if not address:
+        return jsonify({"error": "Address is required"}), 400
+
+    geocode_result = gmaps.geocode(address)
+    if geocode_result:
+        return jsonify(geocode_result[0]['geometry']['location'])
+    else:
+        return jsonify({"error": "Location not found"}), 404
+
+
 
 @app.route('/api/building', methods=['GET'])
 def get_buildings():
