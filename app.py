@@ -14,8 +14,9 @@ def serialize_doc(doc):
 
 app = Flask(__name__)
 app.wsgi_app = LoggingMiddleware(app.wsgi_app)
-app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://root:oyyb980219@localhost:3306/db'
-
+# app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://root:oyyb980219@localhost:3306/db'
+# building-service.cbektip5rq0q.us-east-1.rds.amazonaws.com
+app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://admin:E6156proj*@building-microservice.cbektip5rq0q.us-east-1.rds.amazonaws.com:3306/db'
 app.config["GOOGLE_MAPS_API_KEY"] = "AIzaSyChRU-WeMzdOJPcJh34tnz-YWTr3vNJt08"
 CORS(app)
 
