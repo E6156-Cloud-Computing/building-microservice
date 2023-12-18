@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import Integer, String, Boolean, ForeignKey, select
 from sqlalchemy.orm import Mapped, mapped_column
+from flask_cors import CORS
+from middleware import LoggingMiddleware
 import googlemaps
 
 def serialize_doc(doc):
@@ -11,10 +13,12 @@ def serialize_doc(doc):
     return doc
 
 app = Flask(__name__)
-
+app.wsgi_app = LoggingMiddleware(app.wsgi_app)
 app.config["SQLALCHEMY_DATABASE_URI"] = 'mysql+pymysql://root:oyyb980219@localhost:3306/db'
 
 app.config["GOOGLE_MAPS_API_KEY"] = "AIzaSyChRU-WeMzdOJPcJh34tnz-YWTr3vNJt08"
+CORS(app)
+
 gmaps = googlemaps.Client(key=app.config["GOOGLE_MAPS_API_KEY"])
 
 
@@ -111,7 +115,7 @@ def create_building():
     num_floor = data.get('num_floor', 6)
 
     if building_name:
-        if num_floor>0:
+        if num_floor > 0:
             new_building = Building(building_name=building_name, description=description, num_floor=num_floor)
             db.session.add(new_building)
             db.session.commit()
