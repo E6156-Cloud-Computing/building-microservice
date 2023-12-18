@@ -29,11 +29,14 @@ class Building(db.Model):
     description: Mapped[str] = mapped_column(String(100))
     num_floor: Mapped[int] = mapped_column(Integer)
 
-class Rooms_Building(db.Model):
+class Room_Building(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     room_type: Mapped[str] = mapped_column(String(20))
     available: Mapped[bool] = mapped_column(Boolean)
     room_number: Mapped[int] = mapped_column(Integer, unique=True)
+    email1: Mapped[str] = mapped_column(String(50), nullable=True)
+    email2: Mapped[str] = mapped_column(String(50), nullable=True)
+    email3: Mapped[str] = mapped_column(String(50), nullable=True)
     building_id: Mapped[int] = mapped_column(Integer, ForeignKey('building.id'), index=True)
 
 with app.app_context():
@@ -54,7 +57,41 @@ def get_location():
     else:
         return jsonify({"error": "Location not found"}), 404
 
+@app.route('/api/room/update_room_emails/<string:building_id>/<int:room_id>', methods=['PUT'])
+def update_room_emails(building_id, room_id):
+    room_info = db.session.query(Room_Building).filter_by(id=room_id, building_id=building_id).first()
+    if room_info is None:
+        return jsonify({'error': 'Room not found'}), 404
 
+    data = request.get_json()
+
+    room_info.email1 = data.get('email1', room_info.email1)
+    room_info.email2 = data.get('email2', room_info.email2)
+    room_info.email3 = data.get('email3', room_info.email3)
+
+    db.session.commit()
+
+    return jsonify({"message": 'Room emails updated successfully'}), 200
+
+@app.route('/api/room/search_room_by_email', methods=['GET'])
+def search_room_by_email():
+    email = request.args.get('email')
+    if not email:
+        return jsonify({'error': 'Email parameter is required'}), 400
+    
+    room_info = db.session.query(Room_Building).filter((Room_Building.email1 == email)|(Room_Building.email2 == email)|(Room_Building.email3 == email)).first()
+    if not room_info:
+        return jsonify({'message': 'Room not found for the given email'}), 404
+
+    room_data = {
+        'id': room_info.id,
+        'room_type': room_info.room_type,
+        'available': room_info.available,
+        'room_number': room_info.room_number,
+        'building_id': room_info.building_id
+    }
+
+    return jsonify({'message': 'Room info found', 'room': room_data}), 200
 
 @app.route('/api/building', methods=['GET'])
 def get_buildings():
@@ -65,7 +102,7 @@ def get_buildings():
         return jsonify({"message": "successfully", "content": buildings_list}), 201
     else:
         return jsonify({"error": "Building info not found"}), 404
-
+    
 @app.route('/api/building', methods=['POST'])
 def create_building():
     data = request.json
@@ -138,11 +175,11 @@ def create_room(building_name, room_type):
     available = data.get('available', False)
     
     if building_info:
-        existing_room = db.session.query(Rooms_Building).filter_by(building_id=building_info.id, room_number=room_number).first()
+        existing_room = db.session.query(Room_Building).filter_by(building_id=building_info.id, room_number=room_number).first()
         if existing_room:
             return jsonify({"message": "Room number already exist"}), 500
         if room_number>0 and room_type:
-            new_room = Rooms_Building(room_number=room_number, room_type=room_type, available=available, building_id=building_info.id)
+            new_room = Room_Building(room_number=room_number, room_type=room_type, available=available, building_id=building_info.id)
             db.session.add(new_room)
             db.session.commit()
             room_dict = {
@@ -163,18 +200,39 @@ def get_room_info(building_name, room_type):
     building_info = db.session.query(Building).filter_by(building_name=building_name).first()
 
     if building_info:
-        rooms = db.session.query(Rooms_Building).filter_by(building_id=building_info.id, room_type=room_type).all()
+        rooms = db.session.query(Room_Building).filter_by(building_id=building_info.id, room_type=room_type).all()
         rooms_list = [{'id': room.id, 'room_number': room.room_number, 'room_type': room.room_type, 'available': room.available, 'building_id': room.building_id} for room in rooms]
         return jsonify({"message": f"Rooms for {building_name}", "content": rooms_list}), 200
     else:
         return jsonify({"error": "Building info not found"}), 404
     
+@app.route('/api/building/<string:building_name>/check_room/<int:room_id>', methods=['GET'])
+def check_room(building_name, room_id):
+    building_info = db.session.query(Building).filter_by(building_name=building_name).first()
+
+    if building_info:
+        room_info = db.session.query(Room_Building).filter_by(building_id=building_info.id, id=room_id).first()
+        if room_info:
+            if room_info.available:
+                return jsonify({
+                    "message": "Room is available",
+                    'room_number': room_info.room_number,
+                    'building_name': building_info.building_name,
+                    'room_id': room_info.id
+                }), 200
+            else:
+                return jsonify({"message": "Room not available"})
+        else:
+            return jsonify({"error": "Room info not found"}), 404
+    else:
+        return jsonify({"error": "Building info not found"}), 404
+
 @app.route('/api/building/<string:building_name>/room/<string:room_type>/<int:room_number>', methods=['PUT'])
 def update_room_info(building_name, room_type, room_number):
     building_info = db.session.query(Building).filter_by(building_name=building_name).first()
     
     if building_info:
-        room_info = db.session.query(Rooms_Building).filter_by(building_id=building_info.id, room_type=room_type, room_number=room_number).first()
+        room_info = db.session.query(Room_Building).filter_by(building_id=building_info.id, room_type=room_type, room_number=room_number).first()
         data = request.get_json(force=True)
         room_info.room_type = data.get('room_type', room_info.room_type)
         room_info.room_number = data.get('room_number', room_info.room_number)
@@ -189,7 +247,7 @@ def update_room_info(building_name, room_type, room_number):
 @app.route('/api/building/<string:building_name>/room/<string:room_type>/<int:room_number>', methods=['DELETE'])
 def delete_room(building_name, room_type, room_number):
     building_info = db.session.query(Building).filter_by(building_name=building_name).first()
-    room_info = db.session.query(Rooms_Building).filter_by(building_id=building_info.id, room_type=room_type, room_number=room_number).first()
+    room_info = db.session.query(Room_Building).filter_by(building_id=building_info.id, room_type=room_type, room_number=room_number).first()
 
     if building_info:
         if room_info:
