@@ -83,6 +83,7 @@ def search_room_by_email():
         return jsonify({'error': 'Email parameter is required'}), 400
     
     room_info = db.session.query(Room_Building).filter((Room_Building.email1 == email)|(Room_Building.email2 == email)|(Room_Building.email3 == email)).first()
+    building_info = db.session.query(Building).filter_by(id=room_info.building_id).first()
     if not room_info:
         return jsonify({'message': 'Room not found for the given email'}), 404
 
@@ -91,7 +92,8 @@ def search_room_by_email():
         'room_type': room_info.room_type,
         'available': room_info.available,
         'room_number': room_info.room_number,
-        'building_id': room_info.building_id
+        'building_id': room_info.building_id,
+        'building_name': building_info.building_name
     }
 
     return jsonify({'message': 'Room info found', 'room': room_data}), 200
@@ -190,7 +192,8 @@ def create_room(building_name, room_type):
                 'room_number': new_room.room_number,
                 'room_type': new_room.room_type,
                 'available': new_room.available,
-                'building_id': new_room.building_id
+                'building_id': new_room.building_id,
+                'building_name': building_name
             }
             return jsonify({"message": "Room info inserted successfully", "content": room_dict}), 201
         else:
@@ -242,7 +245,7 @@ def update_room_info(building_name, room_type, room_number):
         room_info.available = data.get('available', room_info.available)  
         db.session.commit()
 
-        room_dict = {'id': room_info.id, 'room_type': room_info.room_type, 'available': room_info.available, 'room_number': room_info.room_number, 'building_id': room_info.building_id}
+        room_dict = {'id': room_info.id, 'room_type': room_info.room_type, 'available': room_info.available, 'room_number': room_info.room_number, 'building_id': room_info.building_id, 'building_name': building_name}
         return jsonify({"message": "Building info updated successfully", "content": room_dict}), 201
     else:
         return jsonify({"error": "Building info not found"}), 404
