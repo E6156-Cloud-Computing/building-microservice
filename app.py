@@ -264,4 +264,5 @@ def delete_room(building_name, room_type, room_number):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # app.run(debug=True)
+    app.run(host='0.0.0.0',port='5000',ssl_context='adhoc')
