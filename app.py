@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, logging
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import Integer, String, Boolean, ForeignKey, select
@@ -137,9 +137,10 @@ def create_building():
 @app.route('/api/building/<string:building_name>', methods=['GET'])
 def get_building(building_name):
     building_info = db.session.query(Building).filter_by(building_name=building_name)
+    
     buildings_list = [{'id': b.id, 'building_name': b.building_name, 'description': b.description, 'num_floor': b.num_floor} for b in building_info]
 
-    if building_info:
+    if buildings_list:
         return jsonify({"message": "successfully", "content": buildings_list}), 201
     else:
         return jsonify({"error": "Building info not found"}), 404
@@ -210,7 +211,11 @@ def get_room_info(building_name, room_type):
     if building_info:
         rooms = db.session.query(Room_Building).filter_by(building_id=building_info.id, room_type=room_type).all()
         rooms_list = [{'id': room.id, 'room_number': room.room_number, 'room_type': room.room_type, 'available': room.available, 'building_id': room.building_id} for room in rooms]
-        return jsonify({"message": f"Rooms for {building_name}", "content": rooms_list}), 200
+        if rooms_list:
+            return jsonify({"message": f"Rooms for {building_name}", "content": rooms_list}), 200
+        else:
+            return jsonify({"error": "Room info not found"}), 404
+            
     else:
         return jsonify({"error": "Building info not found"}), 404
     
