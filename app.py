@@ -83,9 +83,11 @@ def search_room_by_email():
         return jsonify({'error': 'Email parameter is required'}), 400
     
     room_info = db.session.query(Room_Building).filter((Room_Building.email1 == email)|(Room_Building.email2 == email)|(Room_Building.email3 == email)).first()
-    building_info = db.session.query(Building).filter_by(id=room_info.building_id).first()
+
     if not room_info:
         return jsonify({'message': 'Room not found for the given email'}), 404
+
+    building_info = db.session.query(Building).filter_by(id=room_info.building_id).first()
 
     room_data = {
         'id': room_info.id,
@@ -267,5 +269,5 @@ def delete_room(building_name, room_type, room_number):
 
 
 if __name__ == '__main__':
-    # app.run(debug=True)
-    app.run(host='0.0.0.0',port='5000',ssl_context='adhoc')
+    app.run(host='0.0.0.0',ssl_context=('cert.pem','key.pem'))
+    
