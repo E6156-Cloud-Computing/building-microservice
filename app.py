@@ -144,6 +144,18 @@ def get_building(building_name):
         return jsonify({"message": "successfully", "content": buildings_list}), 201
     else:
         return jsonify({"error": "Building info not found"}), 404
+    
+@app.route('/api/building/<string:building_name>/rooms', methods=['GET'])
+def get_rooms(building_name):
+    building_info = db.session.query(Building).filter_by(building_name=building_name).first()
+    room_info = db.session.query(Room_Building).filter_by(building_id=building_info.id)
+    
+    rooms_list = [{'id': r.id, 'room_type': r.room_type, 'available': r.available, 'room_number': r.room_number, 'building_id': r.building_id, 'building_name': building_name} for r in room_info]
+
+    if rooms_list:
+        return jsonify({"message": "successfully", "content": rooms_list}), 201
+    else:
+        return jsonify({"error": "Rooms info not found"}), 404
 
 @app.route('/api/building/<string:building_name>', methods=['PUT'])
 def update_building(building_name):
